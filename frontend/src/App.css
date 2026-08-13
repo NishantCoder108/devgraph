@@ -619,3 +619,33 @@ main {
   color: #71717a;
   font-size: 13px;
 }
+
+.project-meta {
+  margin-top: 18px;
+}
+
+.project-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #a1a1aa;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.project-context {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.project-context span {
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #f4f4f5;
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+}
