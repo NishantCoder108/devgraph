@@ -8,10 +8,7 @@ import {
 export async function searchDevelopers(query: string) {
   const filters = await resolveEntities(query);
 
-  const developers = await findDevelopersByFilters({
-    skills: filters.skills,
-    domains: filters.domains,
-  });
+const developers = await findDevelopersByFilters(filters);
 
   return {
     query,

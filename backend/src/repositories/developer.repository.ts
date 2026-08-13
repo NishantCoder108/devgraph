@@ -5,26 +5,67 @@ export interface DeveloperSearchFilters {
   domains: string[];
 }
 
-export async function findDevelopersByFilters(filters: DeveloperSearchFilters) {
+export interface DeveloperSearchFilters {
+  skills: string[];
+  technologies: string[];
+  domains: string[];
+  projects: string[];
+  companies: string[];
+}
+
+export async function findDevelopersByFilters(
+  filters: DeveloperSearchFilters,
+) {
   const session = driver.session();
 
   try {
     const result = await session.run(
       `
-      MATCH (d:Developer)-[:HAS_SKILL]->(s:Skill)
+      MATCH (d:Developer)
 
-      WHERE s.name IN $skills
+      OPTIONAL MATCH (d)-[:HAS_SKILL]->(skill:Skill)
 
-      WITH d, collect(DISTINCT s.name) AS matchedSkills
+      OPTIONAL MATCH (d)-[:WORKED_ON]->(project:Project)
 
-      WHERE size(matchedSkills) = size($skills)
+      OPTIONAL MATCH (project)-[:USES]->(technology:Technology)
 
-      OPTIONAL MATCH (d)-[:WORKED_ON]->(p:Project)-[:IN_DOMAIN]->(domain:Domain)
+      OPTIONAL MATCH (project)-[:IN_DOMAIN]->(domain:Domain)
 
-      WITH d, matchedSkills, collect(DISTINCT domain.name) AS matchedDomains
+      OPTIONAL MATCH (project)-[:FOR_COMPANY]->(company:Company)
 
-      WHERE size($domains) = 0
-        OR any(domain IN matchedDomains WHERE domain IN $domains)
+      WITH
+        d,
+        collect(DISTINCT skill.name) AS developerSkills,
+        collect(DISTINCT project.name) AS projectNames,
+        collect(DISTINCT technology.name) AS technologyNames,
+        collect(DISTINCT domain.name) AS domainNames,
+        collect(DISTINCT company.name) AS companyNames
+
+      WHERE
+        (
+          size($skills) = 0
+          OR all(skill IN $skills WHERE skill IN developerSkills)
+        )
+        AND
+        (
+          size($technologies) = 0
+          OR all(technology IN $technologies WHERE technology IN technologyNames)
+        )
+        AND
+        (
+          size($domains) = 0
+          OR any(domain IN $domains WHERE domain IN domainNames)
+        )
+        AND
+        (
+          size($projects) = 0
+          OR any(project IN $projects WHERE project IN projectNames)
+        )
+        AND
+        (
+          size($companies) = 0
+          OR any(company IN $companies WHERE company IN companyNames)
+        )
 
       RETURN
         d.id AS id,
@@ -32,12 +73,19 @@ export async function findDevelopersByFilters(filters: DeveloperSearchFilters) {
         d.title AS title,
         d.location AS location,
         d.yearsExperience AS yearsExperience,
-        matchedSkills
-    ORDER BY d.name
+        [
+          skill IN $skills
+          WHERE skill IN developerSkills
+        ] AS matchedSkills
+
+      ORDER BY d.name
       `,
       {
         skills: filters.skills,
+        technologies: filters.technologies,
         domains: filters.domains,
+        projects: filters.projects,
+        companies: filters.companies,
       },
     );
 
@@ -63,9 +111,39 @@ export async function findDeveloperById(id: string) {
       MATCH (d:Developer {id: $id})
 
       OPTIONAL MATCH (d)-[:HAS_SKILL]->(s:Skill)
-      OPTIONAL MATCH (d)-[:WORKED_ON]->(p:Project)
-      OPTIONAL MATCH (d)-[:WORKS_AT]->(c:Company)
-      OPTIONAL MATCH (d)-[:HAS_DOMAIN_EXPERIENCE]->(domain:Domain)
+
+      OPTIONAL MATCH (d)-[:WORKED_ON]->(p:Project) 
+      OPTIONAL MATCH (p)-[:USES]->(t:Technology)
+      OPTIONAL MATCH (p)-[:REQUIRES_SKILL]->(required:Skill)
+      OPTIONAL MATCH (p)-[:IN_DOMAIN]->(domain:Domain)
+      OPTIONAL MATCH (p)-[:FOR_COMPANY]->(company:Company)
+
+      WITH
+        d,
+        collect(DISTINCT s.name) AS skills,
+        p,
+        collect(DISTINCT t.name) AS technologies,
+        collect(DISTINCT required.name) AS requiredSkills,
+        collect(DISTINCT domain.name)[0] AS domain,
+        collect(DISTINCT company.name)[0] AS company
+
+      WITH
+        d,
+        skills,
+        collect(
+          CASE
+            WHEN p IS NULL THEN NULL
+            ELSE {
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              technologies: technologies,
+              requiredSkills: requiredSkills,
+              domain: domain,
+              company: company
+            }
+          END
+        ) AS projects
 
       RETURN
         d.id AS id,
@@ -73,14 +151,8 @@ export async function findDeveloperById(id: string) {
         d.title AS title,
         d.location AS location,
         d.yearsExperience AS yearsExperience,
-        collect(DISTINCT s.name) AS skills,
-        collect(DISTINCT {
-          id: p.id,
-          name: p.name,
-          description: p.description
-        }) AS projects,
-        collect(DISTINCT c.name) AS companies,
-        collect(DISTINCT domain.name) AS domains
+        skills,
+        [project IN projects WHERE project IS NOT NULL] AS projects
       `,
       { id },
     );
@@ -98,11 +170,7 @@ export async function findDeveloperById(id: string) {
       location: record.get("location"),
       yearsExperience: record.get("yearsExperience"),
       skills: record.get("skills").filter(Boolean),
-      projects: record.get("projects").filter((project: unknown) => {
-        return project && typeof project === "object" && "id" in project;
-      }),
-      companies: record.get("companies").filter(Boolean),
-      domains: record.get("domains").filter(Boolean),
+      projects: record.get("projects"),
     };
   } finally {
     await session.close();
