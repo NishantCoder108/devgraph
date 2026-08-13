@@ -1,102 +1,53 @@
-<!-- # DevGraph
-
-## What is DevGraph?
-
-## Why a graph database?
-
-## Architecture
-
-## Graph data model
-
-## Main graph queries
-
-### Search developers by skills
-### Search by domain
-### Shared project connections
-### Multi-hop developer matching
-
-## Tech stack
-
-## Project structure
-
-## Local setup
-
-## Environment variables
-
-## Seed database
-
-## Run application
-
-## Screenshots
-
-## Demo -->
-
-
 # DevGraph
 
 > Discover developers through their skills, projects, technologies, companies, and professional connections.
 
-DevGraph is a small graph-powered developer discovery application built for the Wexa AI CognoDB take-home assignment.
+**[Live Demo](YOUR_DEPLOYED_URL)** · **[Demo Video](YOUR_RECORDING_URL)**
 
-Instead of treating developers, skills, projects, technologies, companies, and domains as isolated records, DevGraph models the relationships between them and uses graph traversal to answer relationship-heavy search questions.
+<!-- ![DevGraph](YOUR_HERO_IMAGE_URL) -->
 
-## Live Demo
+---
 
-**Demo:** `YOUR_DEPLOYED_URL`
+## What is DevGraph?
 
-**Screen Recording:** `YOUR_RECORDING_URL`
+DevGraph is a graph-powered developer discovery application built with CognoDB.
 
-## Why DevGraph?
+Users can search for developers using natural-looking queries such as:
 
-Finding developers is often more useful when we can understand their **relationships and experience**, not just their profile attributes.
+> **Find Rust developers with PostgreSQL experience in fintech**
+
+The application resolves known skills, technologies, projects, companies, and domains from the graph, then uses parameterized Cypher queries to traverse the relationships and return matching developers.
+
+Users can then open a developer profile and explore their projects, technologies, skills, domain experience, and connections to other developers.
+
+---
+
+## Why a Graph Database?
+
+The important questions in DevGraph are about **relationships**, not only individual records.
 
 For example:
-
-> Find Rust developers with PostgreSQL experience who worked on Fintech projects.
-
-This requires following multiple relationships:
-
-![DevGraph relationship example](docs/graph-model.svg)
 
 ```text
 Developer
    ├── HAS_SKILL ──────────────> Skill
    │
    └── WORKED_ON ──────────────> Project
-                                   ├── IN_DOMAIN ────────> Domain
                                    ├── USES ──────────────> Technology
                                    ├── REQUIRES_SKILL ────> Skill
+                                   ├── IN_DOMAIN ─────────> Domain
                                    └── FOR_COMPANY ───────> Company
 ```
 
-A relational database can model this information, but relationship-heavy traversal becomes increasingly join-oriented as the number of relationships and hops grows.
+A question such as:
 
-A graph database makes these relationships first-class and allows the application to query paths directly.
+> Find developers with Rust and PostgreSQL experience who worked on Fintech projects.
 
-## Why a Graph Database?
+requires traversing multiple relationships.
 
-The core questions in DevGraph are about **connections**:
+A relational database can represent this data, but relationship-heavy questions become increasingly join-oriented as the number of relationships and traversal hops grows. In DevGraph, those relationships are first-class graph structures, so the query can follow the paths directly.
 
-* Which developers have a particular skill?
-* Which developers worked on projects in a particular domain?
-* Which developers worked on the same projects?
-* Which technologies were used by a developer's projects?
-* Which skills are required by those projects?
-* Which developers match multiple graph-based criteria?
-
-These are graph traversal problems rather than simple record lookups.
-
-For example:
-
-```text
-Developer
-   ↓ WORKED_ON
-Project
-   ↓ IN_DOMAIN
-Domain
-```
-
-and:
+Another example is discovering developers who worked on the same project:
 
 ```text
 Developer
@@ -106,18 +57,89 @@ Project
 Developer
 ```
 
-The second path allows DevGraph to discover related developers through shared projects without storing an artificial direct `CONNECTED_TO` relationship.
+This connection does not need a separate artificial `CONNECTED_TO` relationship. It can be derived by traversing the existing graph.
+
+---
+
+## Product
+
+### Search
+
+![DevGraph Search](docs/screenshots/search.png)
+
+Search the developer network using natural-looking queries.
+
+### Search Results
+
+![DevGraph Results](docs/screenshots/results.png)
+
+Results show matching developers together with the graph criteria used for the search.
+
+### Developer Profile
+
+![DevGraph Developer Profile](docs/screenshots/developer-profile.png)
+
+A developer profile exposes connected skills, projects, technologies, required skills, domains, companies, and shared-project connections.
+
+---
+
+## How It Works
+
+```text
+User
+  │
+  ▼
+React Search UI
+  │
+  │ POST /api/search
+  ▼
+Fastify Route
+  │
+  ▼
+Search Service
+  │
+  ▼
+Entity Resolver
+  │
+  │ Structured search filters
+  ▼
+Developer Repository
+  │
+  │ Parameterized Cypher
+  ▼
+Neo4j JavaScript Driver
+  │
+  │ Bolt
+  ▼
+CognoDB
+  │
+  ▼
+Developer Results
+  │
+  ▼
+React UI
+```
+
+The frontend sends the user's search text to the backend. The backend resolves known graph entities into structured filters, then executes fixed Cypher queries with parameters.
+
+User input is never concatenated directly into Cypher.
+
+---
 
 ## Graph Data Model
 
+![DevGraph Graph Model](docs/graph-model.svg)
+
 ### Nodes
 
-* `Developer`
-* `Project`
-* `Skill`
-* `Technology`
-* `Company`
-* `Domain`
+```text
+Developer
+Project
+Skill
+Technology
+Company
+Domain
+```
 
 ### Relationships
 
@@ -133,125 +155,70 @@ Project ──IN_DOMAIN────────────────> Domain
 Project ──FOR_COMPANY──────────────> Company
 ```
 
-The full graph model is documented in:
-
-`docs/graph-model.png`
-
-## Architecture
-
-```text
-┌─────────────────────────────┐
-│       React + TypeScript    │
-│          Vite               │
-└──────────────┬──────────────┘
-               │ HTTP / JSON
-               ▼
-┌─────────────────────────────┐
-│     Fastify + TypeScript    │
-│                             │
-│ Routes → Services           │
-│           ↓                 │
-│       Repositories          │
-└──────────────┬──────────────┘
-               │
-               │ neo4j-driver
-               ▼
-┌─────────────────────────────┐
-│        Bolt 5.x             │
-└──────────────┬──────────────┘
-               ▼
-┌─────────────────────────────┐
-│          CognoDB            │
-│       Graph + Cypher        │
-└─────────────────────────────┘
-```
-
-### Application flow
-
-```text
-User search
-    ↓
-React search UI
-    ↓
-POST /api/search
-    ↓
-Search service
-    ↓
-Entity resolver
-    ↓
-Structured search filters
-    ↓
-Developer repository
-    ↓
-Parameterized Cypher
-    ↓
-Neo4j JavaScript driver
-    ↓
-CognoDB
-    ↓
-Developer results
-    ↓
-React cards
-```
-
-## Search
-
-The application provides a natural-looking search experience.
-
-Example:
-
-```text
-Find Rust developers with PostgreSQL experience in fintech
-```
-
-The application resolves known entities from the graph into structured filters:
-
-```json
-{
-  "skills": ["Rust", "PostgreSQL"],
-  "technologies": [],
-  "domains": ["Fintech"],
-  "projects": [],
-  "companies": []
-}
-```
-
-These filters are then passed to fixed Cypher queries as parameters.
-
-The user does **not** send arbitrary Cypher to the database.
-
-## Main Graph Queries
-
-### 1. Find developers by skills and optional graph filters
-
-The main developer search traverses:
+### Example node properties
 
 ```text
 Developer
-   ↓ HAS_SKILL
-Skill
+  id
+  name
+  title
+  location
+  yearsExperience
 
-Developer
-   ↓ WORKED_ON
 Project
-   ├── USES → Technology
-   ├── IN_DOMAIN → Domain
-   └── FOR_COMPANY → Company
+  id
+  name
+  description
+
+Skill
+  id
+  name
+  category
+
+Technology
+  id
+  name
+  category
+
+Company
+  id
+  name
+  industry
+
+Domain
+  id
+  name
 ```
 
-The query uses parameters such as:
+---
+
+## Key Graph Queries
+
+### 1. Developer search
+
+The main search can combine optional graph filters:
 
 ```text
-$skills
-$technologies
-$domains
-$projects
-$companies
+skills
+technologies
+domains
+projects
+companies
 ```
 
-This allows filters to be combined without string-concatenating user input into Cypher.
+The query traverses:
 
-### 2. Multi-hop developer search
+```text
+Developer
+   ├── HAS_SKILL ──> Skill
+   │
+   └── WORKED_ON ──> Project
+                         ├── USES ──────> Technology
+                         ├── IN_DOMAIN ─> Domain
+                         └── FOR_COMPANY > Company
+```
+
+### 2. Multi-hop search
 
 Example:
 
@@ -263,11 +230,25 @@ Project
 Domain
 ```
 
-This allows searches such as:
+This supports searches such as:
 
 > Rust developers with Fintech project experience.
 
-### 3. Shared-project connections
+### 3. Technology traversal
+
+```text
+Developer
+   ↓ WORKED_ON
+Project
+   ↓ USES
+Technology
+```
+
+For example:
+
+> Find developers with Axum experience.
+
+### 4. Shared-project connections
 
 ```text
 Developer
@@ -277,46 +258,94 @@ Project
 Developer
 ```
 
-This allows DevGraph to discover developers who worked together on the same project.
+This allows the application to discover developers who worked on the same projects.
 
-### 4. Developer project exploration
+### 5. Project exploration
 
-A developer's profile can expose:
-
-```text
-Developer
-   ├── Skills
-   ├── Projects
-   │     ├── Technologies
-   │     ├── Required skills
-   │     ├── Domain
-   │     └── Company
-   ├── Company
-   └── Connected developers
-```
-
-## Example Graph Data
-
-Example project relationships:
+A developer's project can be explored through additional relationships:
 
 ```text
-Invoice SaaS
-    ├── USES → Axum
-    ├── USES → Tokio
-    ├── REQUIRES_SKILL → Rust
-    ├── REQUIRES_SKILL → PostgreSQL
-    └── IN_DOMAIN → Fintech
+Project
+   ├── USES ──────────────> Technology
+   ├── REQUIRES_SKILL ────> Skill
+   ├── IN_DOMAIN ─────────> Domain
+   └── FOR_COMPANY ───────> Company
 ```
 
-Another project:
+---
 
-```text
-Developer Portal
-    ├── USES → React
-    ├── USES → Kafka
-    ├── REQUIRES_SKILL → TypeScript
-    └── IN_DOMAIN → Developer Tools
+## Parameterized Cypher
+
+All user-derived values are passed separately as query parameters through the official Neo4j JavaScript driver.
+
+Example:
+
+```cypher
+MATCH (d:Developer)
+
+OPTIONAL MATCH (d)-[:HAS_SKILL]->(skill:Skill)
+OPTIONAL MATCH (d)-[:WORKED_ON]->(project:Project)
+OPTIONAL MATCH (project)-[:USES]->(technology:Technology)
+OPTIONAL MATCH (project)-[:IN_DOMAIN]->(domain:Domain)
+OPTIONAL MATCH (project)-[:FOR_COMPANY]->(company:Company)
+
+WITH
+  d,
+  collect(DISTINCT skill.name) AS developerSkills,
+  collect(DISTINCT project.name) AS projectNames,
+  collect(DISTINCT technology.name) AS technologyNames,
+  collect(DISTINCT domain.name) AS domainNames,
+  collect(DISTINCT company.name) AS companyNames
+
+WHERE
+  (
+    size($skills) = 0
+    OR all(skill IN $skills WHERE skill IN developerSkills)
+  )
+  AND
+  (
+    size($technologies) = 0
+    OR all(technology IN $technologies WHERE technology IN technologyNames)
+  )
+  AND
+  (
+    size($domains) = 0
+    OR any(domain IN $domains WHERE domain IN domainNames)
+  )
+  AND
+  (
+    size($projects) = 0
+    OR any(project IN $projects WHERE project IN projectNames)
+  )
+  AND
+  (
+    size($companies) = 0
+    OR any(company IN $companies WHERE company IN companyNames)
+  )
+
+RETURN
+  d.id AS id,
+  d.name AS name,
+  d.title AS title,
+  d.location AS location,
+  d.yearsExperience AS yearsExperience
 ```
+
+Parameters are supplied independently:
+
+```ts
+session.run(query, {
+  skills,
+  technologies,
+  domains,
+  projects,
+  companies,
+});
+```
+
+This keeps the Cypher structure separate from user data.
+
+---
 
 ## Tech Stack
 
@@ -340,17 +369,52 @@ Developer Portal
 * Bolt
 * Official Neo4j JavaScript driver
 
-### Validation / Configuration
+---
 
-* Environment variables for database credentials
-* Structured application configuration
+## Architecture
+
+The backend follows a simple layered structure:
+
+```text
+HTTP Route
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Neo4j Driver
+    ↓
+CognoDB
+```
+
+### Configuration
+
+Environment-specific settings are loaded from environment variables.
+
+### Error handling
+
+Database and API failures are caught by the backend and returned as user-safe responses. The frontend displays dedicated error states instead of exposing internal database errors.
+
+### Why the layering?
+
+* **Routes** handle HTTP concerns.
+* **Services** coordinate application logic.
+* **Repositories** own Cypher and database operations.
+* **Database layer** owns the Neo4j driver connection.
+* **Configuration** owns environment variables and startup validation.
+
+---
 
 ## Project Structure
 
 ```text
 devgraph/
 ├── docs/
-│   └── graph-model.png
+│   ├── graph-model.png
+│   └── screenshots/
+│       ├── search.png
+│       ├── results.png
+│       └── developer-profile.png
 │
 ├── backend/
 │   ├── scripts/
@@ -360,23 +424,17 @@ devgraph/
 │   ├── src/
 │   │   ├── config/
 │   │   │   └── env.ts
-│   │   │
 │   │   ├── db/
 │   │   │   └── neo4j.ts
-│   │   │
 │   │   ├── repositories/
 │   │   │   └── developer.repository.ts
-│   │   │
 │   │   ├── routes/
 │   │   │   ├── search.ts
 │   │   │   └── developers.ts
-│   │   │
 │   │   ├── services/
 │   │   │   └── search.service.ts
-│   │   │
 │   │   ├── utils/
 │   │   │   └── entity-resolver.ts
-│   │   │
 │   │   └── server.ts
 │   │
 │   ├── .env.example
@@ -396,78 +454,7 @@ devgraph/
 └── README.md
 ```
 
-## Configuration
-
-Create `backend/.env`:
-
-```env
-COGNODB_URI=bolt+s://<instance-id>.databases.cognodb.cloud
-COGNODB_USERNAME=cognodb
-COGNODB_PASSWORD=<your-password>
-PORT=3000
-```
-
-Do not commit `.env`.
-
-The repository includes `.env.example` as a template.
-
-The assignment requires CognoDB connection details to be read from environment variables and not committed to the repository.
-
-## Create a CognoDB Instance
-
-1. Create an account at CognoDB Cloud.
-2. Create a free `c0` instance.
-3. Select a region.
-4. Copy the generated Bolt URI.
-5. Save the generated `cognodb` password securely.
-6. Put the credentials into `backend/.env`.
-
-CognoDB exposes a Bolt-compatible interface and supports openCypher with the official Neo4j drivers.
-
-## Local Setup
-
-### Backend
-
-```bash
-cd backend
-npm install
-```
-
-Create `.env` from `.env.example`.
-
-Then start the API:
-
-```bash
-npm run dev
-```
-
-The backend runs by default at:
-
-```text
-http://localhost:3000
-```
-
-### Seed the graph
-
-Run:
-
-```bash
-npm run seed
-```
-
-The seed script creates realistic developers, projects, skills, technologies, companies, domains, and relationships.
-
-The assignment requires a seed script to be included in the repository.
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open the Vite development URL shown in the terminal.
+---
 
 ## API
 
@@ -478,7 +465,7 @@ POST /api/search
 Content-Type: application/json
 ```
 
-Example:
+Example request:
 
 ```json
 {
@@ -504,94 +491,165 @@ GET /api/developers/:id/connections
 GET /health
 ```
 
-## Parameterized Cypher
+---
 
-All user-derived values are passed as query parameters.
+## Seed Data
+
+The repository includes a reproducible seed script.
+
+The dataset contains:
+
+* Developers
+* Skills
+* Projects
+* Technologies
+* Companies
+* Domains
+* Relationships connecting those entities
 
 Example:
 
-```cypher
-MATCH (d:Developer)
-...
-WHERE
-  size($skills) = 0
-  OR all(skill IN $skills WHERE skill IN developerSkills)
-RETURN d
+```text
+Invoice SaaS
+   ├── USES ──────────────> Axum
+   ├── USES ──────────────> Tokio
+   ├── REQUIRES_SKILL ────> Rust
+   ├── REQUIRES_SKILL ────> PostgreSQL
+   ├── IN_DOMAIN ─────────> Fintech
+   └── FOR_COMPANY ───────> Acme Technologies
 ```
 
-Parameters are supplied separately through the Neo4j driver:
+---
 
-```ts
-session.run(query, {
-  skills,
-  technologies,
-  domains,
-  projects,
-  companies,
-});
+## Local Setup
+
+### 1. Create a CognoDB instance
+
+Create a free CognoDB instance and save the generated Bolt URI and password.
+
+CognoDB uses a Bolt endpoint and can be accessed with the official Neo4j drivers.
+
+### 2. Configure the backend
+
+Create:
+
+```text
+backend/.env
 ```
 
-No user input is concatenated directly into Cypher.
+```env
+COGNODB_URI=bolt+s://<instance-id>.databases.cognodb.cloud
+COGNODB_USERNAME=cognodb
+COGNODB_PASSWORD=<your-password>
+PORT=3000
+```
 
-This follows the assignment requirement for parameterized queries through the official Neo4j driver.
+Do not commit `.env`.
 
-## Error Handling
+The repository contains:
 
-The application handles:
+```text
+backend/.env.example
+```
 
-* Invalid or empty search requests
-* No search results
-* Failed API requests
-* Database connectivity failures
+as a template.
 
-Technical errors are logged by the backend while the frontend presents user-friendly error states.
+### 3. Install and run the backend
 
-The assignment explicitly requires graceful handling when the database is unreachable.
+```bash
+cd backend
+npm install
+npm run seed
+npm run dev
+```
 
-## UI States
+Backend:
 
-The UI includes:
+```text
+http://localhost:3000
+```
 
-* Search loading state
-* Empty result state
-* API/database error state
-* Developer profile loading state
-* Developer connection empty state
+### 4. Install and run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the Vite URL shown in the terminal.
+
+---
+
+## UX & Error Handling
+
+The application includes:
+
+### Loading states
+
+```text
+Searching the developer network...
+Exploring developer connections...
+```
+
+### Empty states
+
+```text
+No developers found.
+No shared-project connections found.
+```
+
+### Error states
+
+```text
+Unable to search the developer network.
+Unable to load developer details.
+```
+
+The backend logs technical errors while the frontend presents user-friendly messages.
+
+---
+
+## Demo
+
+**Live application:** [YOUR_DEPLOYED_URL]
+
+**Screen recording:** [YOUR_RECORDING_URL]
+
+The recommended demo flow is:
+
+```text
+1. Open DevGraph
+2. Enter a graph-based search
+3. Review matching developers
+4. Open a developer profile
+5. Explore projects and technologies
+6. Explore shared-project connections
+7. Explain one multi-hop graph traversal
+```
+
+---
 
 ## Screenshots
 
 ### Search
 
-`docs/screenshots/search.png`
+![Search screen](docs/screenshots/search.png)
 
-### Search Results
+### Results
 
-`docs/screenshots/results.png`
+![Search results](docs/screenshots/results.png)
 
 ### Developer Profile
 
-`docs/screenshots/developer-profile.png`
+![Developer profile](docs/screenshots/developer-profile.png)
 
 ### Graph Model
 
-![DevGraph graph model](docs/graph-model.png)
+![Graph model](docs/graph-model.png)
 
-## Demo
+---
 
-**Hosted application:** `YOUR_DEPLOYED_URL`
+## License
 
-**Screen recording:** `YOUR_RECORDING_URL`
-
-## Assignment Notes
-
-This project was built as a small, complete graph application focused on demonstrating:
-
-* Graph data modeling
-* Relationship-oriented queries
-* Multi-hop traversal
-* Parameterized Cypher
-* Clean backend layering
-* Reproducible seed data
-* A usable frontend experience
-
-The assignment states that a strong submission should have a sound data model, seed script, working application, polished UX, well-structured architecture, hosted demo, and a clear end-to-end use case.
+This project was created as part of a technical take-home assignment.
