@@ -3,6 +3,7 @@ import { driver, verifyDatabase } from "./db/neo4j";
 import { env } from "./config/env";
 import { searchRoutes } from "./routes/search";
 import cors from "@fastify/cors";
+import { developerRoutes } from "./routes/developers";
 
 const app = Fastify({
   logger: true,
@@ -17,6 +18,7 @@ app.get("/health", async () => {
 });
 
 app.register(searchRoutes);
+app.register(developerRoutes);
 
 app.addHook("onClose", async () => {
   await driver.close();
