@@ -154,6 +154,10 @@ h1 {
   border-style: solid;
 }
 
+.developer-card {
+  cursor: pointer;
+}
+
 @media (max-width: 800px) {
   .developer-grid {
     grid-template-columns: 1fr;
