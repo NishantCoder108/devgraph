@@ -5,22 +5,26 @@ export interface DeveloperSearchFilters {
   domains: string[];
 }
 
-export async function findDevelopersByFilters(
-  filters: DeveloperSearchFilters,
-) {
+export async function findDevelopersByFilters(filters: DeveloperSearchFilters) {
   const session = driver.session();
 
   try {
     const result = await session.run(
       `
       MATCH (d:Developer)-[:HAS_SKILL]->(s:Skill)
-      MATCH (d)-[:WORKED_ON]->(p:Project)-[:IN_DOMAIN]->(domain:Domain)
 
       WHERE s.name IN $skills
-        AND domain.name IN $domains
 
       WITH d, collect(DISTINCT s.name) AS matchedSkills
+
       WHERE size(matchedSkills) = size($skills)
+
+      OPTIONAL MATCH (d)-[:WORKED_ON]->(p:Project)-[:IN_DOMAIN]->(domain:Domain)
+
+      WITH d, matchedSkills, collect(DISTINCT domain.name) AS matchedDomains
+
+      WHERE size($domains) = 0
+        OR any(domain IN matchedDomains WHERE domain IN $domains)
 
       RETURN
         d.id AS id,
@@ -29,7 +33,7 @@ export async function findDevelopersByFilters(
         d.location AS location,
         d.yearsExperience AS yearsExperience,
         matchedSkills
-      ORDER BY d.name
+    ORDER BY d.name
       `,
       {
         skills: filters.skills,
@@ -49,7 +53,6 @@ export async function findDevelopersByFilters(
     await session.close();
   }
 }
-
 
 export async function findDeveloperById(id: string) {
   const session = driver.session();
@@ -105,7 +108,6 @@ export async function findDeveloperById(id: string) {
     await session.close();
   }
 }
-
 
 export async function findDeveloperConnections(id: string) {
   const session = driver.session();
