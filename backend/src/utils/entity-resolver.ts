@@ -1,4 +1,4 @@
-import { driver } from "../db/neo4j.js";
+import { driver } from "../db/neo4j";
 
 export interface SearchFilters {
   skills: string[];
@@ -8,44 +8,95 @@ export interface SearchFilters {
   companies: string[];
 }
 
-export async function resolveEntities(
-  query: string,
-): Promise<SearchFilters> {
+interface EntityNames {
+  skills: string[];
+  technologies: string[];
+  domains: string[];
+  projects: string[];
+  companies: string[];
+}
+
+export async function resolveEntities(query: string): Promise<SearchFilters> {
   const session = driver.session();
 
   try {
-    const skillsResult = await session.run(`
-      MATCH (s:Skill)
-      RETURN s.name AS name
-      ORDER BY s.name
+    const result = await session.run(`
+      MATCH (n)
+      WHERE n:Skill
+         OR n:Technology
+         OR n:Domain
+         OR n:Project
+         OR n:Company
+
+      RETURN
+        CASE
+          WHEN n:Skill THEN "Skill"
+          WHEN n:Technology THEN "Technology"
+          WHEN n:Domain THEN "Domain"
+          WHEN n:Project THEN "Project"
+          WHEN n:Company THEN "Company"
+        END AS type,
+        n.name AS name
+      ORDER BY type, name
     `);
 
-    const domainsResult = await session.run(`
-      MATCH (d:Domain)
-      RETURN d.name AS name
-      ORDER BY d.name
-    `);
+    const entities: EntityNames = {
+      skills: [],
+      technologies: [],
+      domains: [],
+      projects: [],
+      companies: [],
+    };
 
-    const skills = skillsResult.records.map((record) =>
-      String(record.get("name"))
-    );
+    for (const record of result.records) {
+      const type = String(record.get("type"));
+      const name = String(record.get("name"));
 
-    const domains = domainsResult.records.map((record) =>
-      String(record.get("name"))
-    );
+      switch (type) {
+        case "Skill":
+          entities.skills.push(name);
+          break;
+
+        case "Technology":
+          entities.technologies.push(name);
+          break;
+
+        case "Domain":
+          entities.domains.push(name);
+          break;
+
+        case "Project":
+          entities.projects.push(name);
+          break;
+
+        case "Company":
+          entities.companies.push(name);
+          break;
+      }
+    }
 
     const normalizedQuery = query.toLowerCase();
 
     return {
-      skills: skills.filter((skill) =>
-        normalizedQuery.includes(skill.toLowerCase())
+      skills: entities.skills.filter((name) =>
+        normalizedQuery.includes(name.toLowerCase()),
       ),
-      technologies: [],
-      domains: domains.filter((domain) =>
-        normalizedQuery.includes(domain.toLowerCase())
+
+      technologies: entities.technologies.filter((name) =>
+        normalizedQuery.includes(name.toLowerCase()),
       ),
-      projects: [],
-      companies: [],
+
+      domains: entities.domains.filter((name) =>
+        normalizedQuery.includes(name.toLowerCase()),
+      ),
+
+      projects: entities.projects.filter((name) =>
+        normalizedQuery.includes(name.toLowerCase()),
+      ),
+
+      companies: entities.companies.filter((name) =>
+        normalizedQuery.includes(name.toLowerCase()),
+      ),
     };
   } finally {
     await session.close();

@@ -26,6 +26,10 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  technologies: string[];
+  requiredSkills: string[];
+  domain: string | null;
+  company: string | null;
 }
 
 export interface DeveloperDetail {
