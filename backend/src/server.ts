@@ -2,9 +2,14 @@ import Fastify from "fastify";
 import { driver, verifyDatabase } from "./db/neo4j";
 import { env } from "./config/env";
 import { searchRoutes } from "./routes/search";
+import cors from "@fastify/cors";
 
 const app = Fastify({
   logger: true,
+});
+
+await app.register(cors, {
+  origin: true,
 });
 
 app.get("/health", async () => {
