@@ -2,10 +2,7 @@
 
 > Discover developers through their skills, projects, technologies, companies, and professional connections.
 
-**[Live Demo](https://devgraph-ui.onrender.com/)** 
-
-<!-- 
-· **[Demo Video](YOUR_RECORDING_URL)**
+**[Live Demo](https://devgraph-ui.onrender.com/)** · **[Demo Video](https://www.loom.com/share/ccddd494244c4e20acbd9770d5753563)**
 
 ![DevGraph](YOUR_HERO_IMAGE_URL) -->
 
@@ -68,19 +65,19 @@ This connection does not need a separate artificial `CONNECTED_TO` relationship.
 
 ### Search
 
-![DevGraph Search](docs/screenshots/search.png)
+![DevGraph Search](docs/search.png)
 
 Search the developer network using natural-looking queries.
 
 ### Search Results
 
-![DevGraph Results](docs/screenshots/results.png)
+![DevGraph Results](docs/search-result.png)
 
 Results show matching developers together with the graph criteria used for the search.
 
 ### Developer Profile
 
-![DevGraph Developer Profile](docs/screenshots/developer-profile.png)
+![DevGraph Developer Profile](docs/developer-profile.png)
 
 A developer profile exposes connected skills, projects, technologies, required skills, domains, companies, and shared-project connections.
 
@@ -609,50 +606,3 @@ Unable to search the developer network.
 Unable to load developer details.
 ```
 
-The backend logs technical errors while the frontend presents user-friendly messages.
-
----
-<!--
-## Demo
-
-**Live application:** [YOUR_DEPLOYED_URL]
-
-**Screen recording:** [YOUR_RECORDING_URL]
-
-The recommended demo flow is:
-
-```text
-1. Open DevGraph
-2. Enter a graph-based search
-3. Review matching developers
-4. Open a developer profile
-5. Explore projects and technologies
-6. Explore shared-project connections
-7. Explain one multi-hop graph traversal
-```
-
----
-
-## Screenshots
-
-### Search
-
-![Search screen](docs/screenshots/search.png)
-
-### Results
-
-![Search results](docs/screenshots/results.png)
-
-### Developer Profile
-
-![Developer profile](docs/screenshots/developer-profile.png)
-
-### Graph Model
-
-![Graph model](docs/graph-model.png)
-
----
-
-## License
-
-This project was created as part of a technical take-home assignment.
