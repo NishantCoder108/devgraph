@@ -1,5 +1,5 @@
 import neo4j, { Driver } from "neo4j-driver";
-import { env } from "../config/env";
+import { env } from "../config/env.js";
 
 export const driver: Driver = neo4j.driver(
   env.cognodbUri,

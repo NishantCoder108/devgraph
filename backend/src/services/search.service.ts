@@ -1,14 +1,14 @@
-import { resolveEntities } from "../utils/entity-resolver";
+import { resolveEntities } from "../utils/entity-resolver.js";
 import {
   findDeveloperById,
   findDeveloperConnections,
   findDevelopersByFilters,
-} from "../repositories/developer.repository";
+} from "../repositories/developer.repository.js";
 
 export async function searchDevelopers(query: string) {
   const filters = await resolveEntities(query);
 
-const developers = await findDevelopersByFilters(filters);
+  const developers = await findDevelopersByFilters(filters);
 
   return {
     query,

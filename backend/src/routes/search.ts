@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { searchDevelopers } from "../services/search.service";
+import { searchDevelopers } from "../services/search.service.js";
 
 interface SearchBody {
   query: string;

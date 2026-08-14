@@ -1,4 +1,4 @@
-import { driver } from "../db/neo4j";
+import { driver } from "../db/neo4j.js";
 
 export interface DeveloperSearchFilters {
   skills: string[];

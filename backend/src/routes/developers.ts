@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import {
   getDeveloper,
   getDeveloperConnections,
-} from "../services/search.service";
+} from "../services/search.service.js";
 
 export async function developerRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>(

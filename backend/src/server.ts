@@ -1,9 +1,9 @@
 import Fastify from "fastify";
-import { driver, verifyDatabase } from "./db/neo4j";
-import { env } from "./config/env";
-import { searchRoutes } from "./routes/search";
+import { driver, verifyDatabase } from "./db/neo4j.js";
+import { env } from "./config/env.js";
+import { searchRoutes } from "./routes/search.js";
 import cors from "@fastify/cors";
-import { developerRoutes } from "./routes/developers";
+import { developerRoutes } from "./routes/developers.js";
 
 const app = Fastify({
   logger: true,
