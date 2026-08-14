@@ -11,6 +11,11 @@ export function SearchResults({
   result,
   onDeveloperClick,
 }: SearchResultsProps) {
+  const filterCount = Object.values(result.filters).reduce(
+    (count, filters) => count + filters.length,
+    0,
+  );
+
   return (
     <section className="results">
       <div className="results-header">
@@ -25,14 +30,19 @@ export function SearchResults({
           <p className="result-query">“{result.query}”</p>
         </div>
 
-        <FilterChips
-          skills={result.filters.skills}
-          domains={result.filters.domains}
-          technologies={result.filters.technologies}
-          projects={result.filters.projects}
-          companies={result.filters.companies}
-        />
+        <div className="result-summary">
+          <span>{filterCount} graph filters</span>
+          <strong>{result.developers.length} profiles shown</strong>
+        </div>
       </div>
+
+      <FilterChips
+        skills={result.filters.skills}
+        domains={result.filters.domains}
+        technologies={result.filters.technologies}
+        projects={result.filters.projects}
+        companies={result.filters.companies}
+      />
 
       {result.developers.length === 0 ? (
         <div className="state">

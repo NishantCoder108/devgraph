@@ -74,7 +74,22 @@ function App() {
   }
 
   return (
-    <main>
+    <main aria-busy={loading || detailLoading}>
+      <header className="app-header">
+        <a href="/" className="app-logo" aria-label="DevGraph home">
+          <span className="brand-mark">DG</span>
+          <span>
+            <strong>DevGraph</strong>
+            <small>Developer discovery</small>
+          </span>
+        </a>
+
+        <div className="app-status">
+          <span className="status-dot" />
+          Graph search ready
+        </div>
+      </header>
+
       <SearchHero
         query={query}
         loading={loading}

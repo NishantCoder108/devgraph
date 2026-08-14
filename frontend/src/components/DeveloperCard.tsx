@@ -5,6 +5,15 @@ interface DeveloperCardProps {
   onClick: (id: string) => void;
 }
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function DeveloperCard({
   developer,
   onClick,
@@ -14,13 +23,16 @@ export function DeveloperCard({
       type="button"
       className="developer-card"
       onClick={() => onClick(developer.id)}
+      aria-label={`Open ${developer.name}'s profile`}
     >
       <div className="card-top">
         <div className="avatar">
-          {developer.name.charAt(0)}
+          {getInitials(developer.name)}
         </div>
 
-        <span className="card-arrow">↗</span>
+        <span className="card-arrow" aria-hidden="true">
+          ↗
+        </span>
       </div>
 
       <h3>{developer.name}</h3>
@@ -31,10 +43,18 @@ export function DeveloperCard({
         {developer.location} · {developer.yearsExperience} years
       </p>
 
-      <div className="skills">
-        {developer.matchedSkills.map((skill) => (
-          <span key={skill}>{skill}</span>
-        ))}
+      <div className="card-footer">
+        <div className="skills">
+          {developer.matchedSkills.slice(0, 4).map((skill) => (
+            <span key={skill}>{skill}</span>
+          ))}
+        </div>
+
+        {developer.matchedSkills.length > 4 && (
+          <span className="more-count">
+            +{developer.matchedSkills.length - 4}
+          </span>
+        )}
       </div>
     </button>
   );
