@@ -2,9 +2,12 @@
 
 > Discover developers through their skills, projects, technologies, companies, and professional connections.
 
-**[Live Demo](YOUR_DEPLOYED_URL)** · **[Demo Video](YOUR_RECORDING_URL)**
+**[Live Demo](https://devgraph-ui.onrender.com/)** 
 
-<!-- ![DevGraph](YOUR_HERO_IMAGE_URL) -->
+<!-- 
+· **[Demo Video](YOUR_RECORDING_URL)**
+
+![DevGraph](YOUR_HERO_IMAGE_URL) -->
 
 ---
 
@@ -609,7 +612,7 @@ Unable to load developer details.
 The backend logs technical errors while the frontend presents user-friendly messages.
 
 ---
-
+<!--
 ## Demo
 
 **Live application:** [YOUR_DEPLOYED_URL]
